@@ -1,6 +1,18 @@
 '''
 Modified from https://github.com/pytorch/vision.git
+
+To train VGG model:
+python vgg.py --model=vgg16 --lr=0.01
+
+Params
+--------
+lr: learning rate, default 0.1
+resume: new model or resume from checkpoint
+model: vgg11/vgg11_bn/vgg13/vgg13_bn/vgg16/vgg16_bn/vgg19/vgg19_bn
+epoch: training epoch
+saving: dir to save trained model, dir of model if resume
 '''
+
 from __future__ import print_function
 import math
 
@@ -130,6 +142,10 @@ def vgg19_bn():
 parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Training')
 parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
 parser.add_argument('--resume', '-r', action='store_true', help='resume from checkpoint')
+parser.add_argument('--model', default='vgg11', type=str,
+                    help='The model to train, vgg11/vgg11_bn/vgg13/vgg13_bn/vgg16/vgg16_bn/vgg19/vgg19_bn')
+parser.add_argument('--epoch', default=200, type=int, help='the number of training epochs')
+parser.add_argument('--saving', default='model.pkl', type=str, help='dir to save trained model')
 args = parser.parse_args()
 
 use_cuda = torch.cuda.is_available()
@@ -162,21 +178,14 @@ classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship'
 if args.resume:
     # Load checkpoint.
     print('==> Resuming from checkpoint..')
-    assert os.path.isdir('checkpoint'), 'Error: no checkpoint directory found!'
-    checkpoint = torch.load('./checkpoint/ckpt.t7')
+    checkpoint = torch.load(args.saving)
     net = checkpoint['net']
     best_acc = checkpoint['acc']
     start_epoch = checkpoint['epoch']
 else:
     print('==> Building model..')
-    net = vgg11()
-    # net = vgg11_bn()
-    # net = vgg13()
-    # net = vgg13_bn()
-    # net = vgg16()
-    # net = vgg16_bn()
-    # net = vgg19()
-    # net = vgg19_bn()
+    assert args.model in ['vgg11','vgg11_bn','vgg13','vgg13_bn','vgg16','vgg16_bn','vgg19','vgg19_bn'], 'model not supported'
+    net = exec(args.model+'()')
     
 # using GPU if available
 if use_cuda:
@@ -249,16 +258,13 @@ def test(epoch):
             'acc': acc,
             'epoch': epoch,
         }
-        if not os.path.isdir('checkpoint'):
-            os.mkdir('checkpoint')
-        torch.save(state, './checkpoint/ckpt.t7')
+        torch.save(state, args.saving)
         best_acc = acc
 
 
-if __name__ == '__main__':
-    for epoch in range(start_epoch, start_epoch+200):
-        train(epoch)
-        test(epoch)
-        torch.cuda.empty_cache() 
+for epoch in range(start_epoch, start_epoch+args.epoch):
+    train(epoch)
+    test(epoch)
+    torch.cuda.empty_cache() 
 
 

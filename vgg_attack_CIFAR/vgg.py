@@ -185,7 +185,7 @@ if args.resume:
 else:
     print('==> Building model..')
     assert args.model in ['vgg11','vgg11_bn','vgg13','vgg13_bn','vgg16','vgg16_bn','vgg19','vgg19_bn'], 'model not supported'
-    net = exec(args.model+'()')
+    net = eval(args.model+'()')
     
 # using GPU if available
 if use_cuda:
@@ -202,9 +202,10 @@ optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=0.9, weight_decay=5
 
 # training
 def train(epoch):
+    global net
     print('\nEpoch: %d' % epoch)
     # switch to train mode
-    net.train()
+    net = net.train()
     train_loss = 0
     correct = 0
     total = 0
@@ -219,7 +220,7 @@ def train(epoch):
         loss = criterion(outputs, targets)
         loss.backward()
         optimizer.step()
-        train_loss += loss.data[0]
+        train_loss += loss.data.item()
         _, predicted = torch.max(outputs.data, 1)
         total += targets.size(0)
         correct += predicted.eq(targets.data).cpu().sum()
@@ -229,8 +230,8 @@ def train(epoch):
 
 # testing
 def test(epoch):
-    global best_acc
-    net.eval()
+    global best_acc, net
+    net = net.eval()
     test_loss = 0
     correct = 0
     total = 0
@@ -241,7 +242,7 @@ def test(epoch):
         outputs = net(inputs)
         loss = criterion(outputs, targets)
         # loss is variable , if add it(+=loss) directly, there will be a bigger ang bigger graph.
-        test_loss += loss.data[0]
+        test_loss += loss.data.item()
         _, predicted = torch.max(outputs.data, 1)
         total += targets.size(0)
         correct += predicted.eq(targets.data).cpu().sum()
@@ -261,10 +262,10 @@ def test(epoch):
         torch.save(state, args.saving)
         best_acc = acc
 
-
-for epoch in range(start_epoch, start_epoch+args.epoch):
-    train(epoch)
-    test(epoch)
-    torch.cuda.empty_cache() 
+if __name__ == '__main__':
+    for epoch in range(start_epoch, start_epoch+args.epoch):
+        train(epoch)
+        test(epoch)
+        torch.cuda.empty_cache()
 
 

@@ -45,7 +45,10 @@ model = vgg.vgg19()
 
 if os.path.isfile(MODEL):
     print("=> loading model '{}'".format(MODEL))
-    checkpoint = torch.load(MODEL)
+    if use_cuda:
+        checkpoint = torch.load(MODEL)
+    else:
+        checkpoint = torch.load(MODEL, map_location='cpu')
     print('best_prec: %3f' % checkpoint['best_prec1'])
     model.load_state_dict(checkpoint, strict=False)
     print('model loaded')

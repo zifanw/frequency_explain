@@ -76,6 +76,7 @@ classes = ('plane', 'car', 'bird', 'cat',
 
 
 [cln_data, true_label] = list(itertools.islice(testloader, 1))[0]
+cln_data, true_label = cln_data.to(device), true_label.to(device)
 
 
 ####################################

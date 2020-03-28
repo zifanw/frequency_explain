@@ -36,7 +36,10 @@ def _imshow(img):
 ####################################
 # model dir
 ####################################
-MODEL = "model_best.pth.tar"
+if use_cuda:
+    MODEL = "model_best.pth.tar"
+else:
+    MODEL = "model_best.pth_CPU.tar"
 
 ####################################
 # load model
@@ -47,9 +50,10 @@ if os.path.isfile(MODEL):
     print("=> loading model '{}'".format(MODEL))
     if use_cuda:
         checkpoint = torch.load(MODEL)
+        model.to(device)
     else:
-        checkpoint = torch.load(MODEL, map_location='cpu')
-    print('best_prec: %3f' % checkpoint['best_prec1'])
+        checkpoint = torch.load(MODEL, map_location=device)
+    # print('best_prec: %3f' % checkpoint['best_prec1'])
     model.load_state_dict(checkpoint, strict=False)
     print('model loaded')
 else:
@@ -67,18 +71,19 @@ transform = transforms.Compose(
 trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
                                         download=True, transform=transform)
 trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size,
-                                          shuffle=True, num_workers=2)
+                                          shuffle=True, num_workers=0)
 
 testset = torchvision.datasets.CIFAR10(root='./data', train=False,
                                        download=True, transform=transform)
 testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size,
-                                         shuffle=False, num_workers=2)
+                                         shuffle=False, num_workers=0)
 
 classes = ('plane', 'car', 'bird', 'cat',
            'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
 
-[cln_data, true_label] = list(itertools.islice(testloader, 1))[0]
+# [cln_data, true_label] = list(itertools.islice(testloader, 1))[0]
+[cln_data, true_label] = next(iter(testloader))
 cln_data, true_label = cln_data.to(device), true_label.to(device)
 
 
@@ -110,6 +115,11 @@ _, pred_cln = torch.max(model(cln_data), 1)
 _, pred_untargeted_adv = torch.max(model(adv_untargeted), 1)
 _, pred_targeted_adv = torch.max(model(adv_targeted), 1)
 
+if use_cuda:
+    cln_data = cln_data.cpu()
+    true_label = true_label.cpu()
+    adv_untargeted = adv_untargeted.cpu()
+    adv_targeted = adv_targeted.cpu()
 
 plt.figure(figsize=(10, 8))
 for ii in range(batch_size):

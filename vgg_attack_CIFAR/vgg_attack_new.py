@@ -16,6 +16,7 @@ import torchvision.transforms as transforms
 from advertorch.attacks import LinfPGDAttack
 
 import vgg
+from vgg import VGG
 
 # set whether to use GPU
 torch.manual_seed(0)
@@ -37,9 +38,9 @@ def _imshow(img):
 # model dir
 ####################################
 if use_cuda:
-    MODEL = "model_best.pth.tar"
+    MODEL = "model.pkl"
 else:
-    MODEL = "model_best.pth_CPU.tar"
+    MODEL = "model.pkl"
 
 ####################################
 # load model
@@ -49,12 +50,10 @@ model = vgg.vgg19()
 if os.path.isfile(MODEL):
     print("=> loading model '{}'".format(MODEL))
     if use_cuda:
-        checkpoint = torch.load(MODEL)
+        model = torch.load(MODEL)['net']
         model.to(device)
     else:
-        checkpoint = torch.load(MODEL, map_location=device)
-    # print('best_prec: %3f' % checkpoint['best_prec1'])
-    model.load_state_dict(checkpoint, strict=False)
+        model = torch.load(MODEL, map_location=device)['net']
     print('model loaded')
 else:
     print("=> no checkpoint found at '{}'".format(MODEL))
@@ -64,9 +63,10 @@ else:
 ####################################
 batch_size = 5
 
-transform = transforms.Compose(
-    [transforms.ToTensor(),
-     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+transform = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+])
 
 trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
                                         download=True, transform=transform)
@@ -82,7 +82,6 @@ classes = ('plane', 'car', 'bird', 'cat',
            'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
 
-# [cln_data, true_label] = list(itertools.islice(testloader, 1))[0]
 [cln_data, true_label] = next(iter(testloader))
 cln_data, true_label = cln_data.to(device), true_label.to(device)
 

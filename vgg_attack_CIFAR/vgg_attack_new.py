@@ -16,7 +16,10 @@ import torch
 import torchvision
 import torchvision.transforms as transforms
 
-from advertorch.attacks import LinfPGDAttack, CarliniWagnerL2Attack, JacobianSaliencyMapAttack
+from advertorch.attacks import LinfPGDAttack, CarliniWagnerL2Attack, JacobianSaliencyMapAttack, LBFGSAttack
+
+# 								PGD Attack, 	CW Attack, 			Jacobian Attack,			FGSM Attack
+
 
 import vgg
 from vgg import VGG
@@ -48,6 +51,8 @@ else:
 ####################################
 # load model
 ####################################
+
+# Set the model 
 model = vgg.vgg19()
 
 if os.path.isfile(MODEL):
@@ -90,19 +95,31 @@ cln_data, true_label = cln_data.to(device), true_label.to(device)
 
 
 ####################################
-# Construct a LinfPGDAttack adversary instance
+# Construct an adversary instance
 ####################################
-adversary = LinfPGDAttack(
+
+
+
+adversary_CW = CarliniWagnerL2Attack(model, num_classes = len(classes) , 
+	confidence=0, targeted=False, learning_rate=0.01, binary_search_steps=9, max_iterations=10000, 
+	abort_early=True, initial_const=0.001, clip_min=0.0, clip_max=1.0, loss_fn=None)
+
+adversary_Jacobian = JacobianSaliencyMapAttack(model, num_classes = len(classes), 
+	clip_min=0.0, clip_max=1.0, loss_fn=None, theta=1.0, gamma=1.0, comply_cleverhans=False)
+
+adversary_PGD = LinfPGDAttack(
 	model, loss_fn=nn.CrossEntropyLoss(reduction="sum"), eps=0.15,
 	nb_iter=40, eps_iter=0.01, rand_init=True, clip_min=0.0, clip_max=1.0,
 	targeted=False)
 
-adversary = CarliniWagnerL2Attack(model, num_classes = len(classes) , 
-	confidence=0, targeted=False, learning_rate=0.01, binary_search_steps=9, max_iterations=10000, 
-	abort_early=True, initial_const=0.001, clip_min=0.0, clip_max=1.0, loss_fn=None)
+adversary_FGSM = LBFGSAttack(model, num_classes = len(classes), batch_size=1, binary_search_steps=9, 
+	max_iterations=100, initial_const=0.01, clip_min=0, clip_max=1, loss_fn=None, targeted=False)
 
-adversary = JacobianSaliencyMapAttack(model, num_classes = len(classes), 
-	clip_min=0.0, clip_max=1.0, loss_fn=None, theta=1.0, gamma=1.0, comply_cleverhans=False)
+
+
+
+# Set the type of attack
+adversary = adversary_PGD
 
 ####################################
 #Perform untargeted attack
@@ -193,7 +210,7 @@ _counter_ = 0
 for i in range(n_rows):
 	for j in range(n_cols):
 		_counter_ += 1
-		_dct_domain_ += torch_dct.dct_2d(adv_untargeted[i,j])
+		_dct_domain_ += torch_dct.dct_2d(adv_untargeted[i,j]) - torch_dct.dct_2d(cln_data[i,j])
 
 _dct_domain_ = _dct_domain_ / _counter_
 
@@ -230,7 +247,7 @@ _counter_ = 0
 for i in range(n_rows):
 	for j in range(n_cols):
 		_counter_ += 1
-		_dct_domain_ += torch_dct.dct_2d(adv_targeted[i,j])
+		_dct_domain_ += torch_dct.dct_2d(adv_targeted[i,j]) - torch_dct.dct_2d(cln_data[i,j])
 
 _dct_domain_ = _dct_domain_ / _counter_
 

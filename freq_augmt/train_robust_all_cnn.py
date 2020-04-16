@@ -24,13 +24,13 @@ def generate_normal_mask(scale=2, t=0.5, output_shape=(32, 32)):
     return normal_dis.squeeze(1)
 
 
-def freq_loss(output, target, alpha=0.8):
+def freq_loss(output, target, alpha=0.8, device='cuda:0'):
     mse_loss = nn.functional.mse_loss(output, target)
     gray_output = torch.mean(output, dim=1)
     spectrum = torch.rfft(gray_output, signal_ndim=2, onesided=False)
     spectrum = torch.norm(spectrum, p='fro', dim=-1)
-    mask = generate_normal_mask()
-    shift_loss = spectrum * mask
+    mask = generate_normal_mask().to(device)
+    shift_loss = torch.mean(spectrum * mask)
     return alpha * mse_loss + (1 - alpha) * shift_loss
 
 
@@ -57,13 +57,13 @@ testloader = torch.utils.data.DataLoader(testset,
 
 classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse',
            'ship', 'truck')
-device = 'cuda'
+device = 'cuda:0'
 
 model = F_AllConvNet(3)
 model = model.to(device)
 mse_criterion = nn.MSELoss()  # mean square error loss
 ce_criterion = nn.CrossEntropyLoss()  # mean square error loss
-optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-5)
+optimizer = torch.optim.SGD(model.parameters(), lr=1e-3, weight_decay=1e-5)
 num_epochs = 10
 
 # %%
@@ -90,31 +90,44 @@ for epoch in range(num_epochs):
 
 # %%
 
-best_loss = np.inf
+best_acc = 0
 weight_path = 'fall_cnn.pt'
 num_epochs = 50
 model.load_state_dict(torch.load('pre_train.pt'))
 
-beta = 0.8
+beta = 1.0
+alpha = 0.5
+
 for epoch in range(num_epochs):
     epoch_loss = 0
+    correct = 0
+    model.train()
     for i, data in enumerate(trainloader):
         img, labels = data
         img = Variable(img).to(device)
         labels = Variable(labels).to(device).long()
         output, recon = model(img, train_fn=False)
-        reconst_loss = freq_loss(recon, img, alpha=0.5)
+        reconst_loss = freq_loss(recon, img, alpha=alpha)
         ce_loss = ce_criterion(output, labels)
-        loss = beta * ce_loss + (1 - beta) * reconst_loss
-        epoch_loss += loss.data
+        loss = beta * ce_loss  # + (1 - beta) * reconst_loss
+        # print("CE: ", float(ce_loss.data), "recon_loss: ",
+        #       float(reconst_loss.data))
         loss.backward()
         optimizer.step()
         optimizer.zero_grad()
+        epoch_loss += loss.data
+        _, predicted = torch.max(nn.functional.softmax(output), 1)
+        correct += (predicted.cpu() == labels.cpu()).sum().item()
+
     epoch_loss = epoch_loss / (i + 1)
-    print('[TRAIN] Epoch:{}, Loss:{:.4f}'.format(epoch + 1, float(epoch_loss)))
+    acc = correct / ((i + 1) * batch_size)
+    print('[TRAIN] Epoch:{}, Loss:{:.4f}, Acc: {:.3f}'.format(
+        epoch + 1, float(epoch_loss), acc))
     if epoch % 2 == 0:
+        model.eval()
         with torch.no_grad():
             epoch_loss = 0
+            correct = 0
             for i, data in enumerate(testloader):
                 img, labels = data
                 img = Variable(img).to(device)
@@ -124,12 +137,19 @@ for epoch in range(num_epochs):
                 ce_loss = ce_criterion(output, labels)
                 loss = beta * ce_loss + (1 - beta) * reconst_loss
                 epoch_loss += loss.data
-            epoch_loss = epoch_loss / (i + 1)
-            print('[TEST] Epoch:{}, Loss:{:.4f}'.format(
-                epoch + 1, float(epoch_loss)))
+                _, predicted = torch.max(nn.functional.softmax(output), 1)
+                correct += (predicted.cpu() == labels.cpu()).sum().item()
 
-            if epoch_loss < best_loss:
-                best_loss = epoch_loss
+            epoch_loss = epoch_loss / (i + 1)
+            acc = correct / ((i + 1) * batch_size)
+            print('[TEST] Epoch:{}, Loss:{:.4f}, Acc: {:.3f}'.format(
+                epoch + 1,
+                float(epoch_loss),
+                acc,
+            ))
+
+            if acc > best_acc:
+                best_acc = acc
                 torch.save(model.state_dict(), weight_path)
                 print("Find a better model, save it to " + weight_path)
 

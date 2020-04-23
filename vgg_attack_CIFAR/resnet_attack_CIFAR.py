@@ -21,8 +21,11 @@ from advertorch.attacks import LinfPGDAttack, CarliniWagnerL2Attack, JacobianSal
 # 								PGD Attack, 	CW Attack, 			Jacobian Attack,			FGSM Attack
 
 
-import vgg
-from vgg import VGG
+# import vgg
+# from vgg import VGG
+
+from robustness.datasets import CIFAR
+from robustness.model_utils import make_and_restore_model
 
 # set whether to use GPU
 torch.manual_seed(0)
@@ -43,28 +46,27 @@ def _imshow(img):
 ####################################
 # model dir
 ####################################
+
+# ResNet (pytorch pertained) model: cifar_nat.pt
+# link: https://www.dropbox.com/s/yhpp4yws7sgi6lj/cifar_nat.pt?dl=0
+# ResNet ($\delta_2=0.25$, Madry pertained) model: cifar_l2_0_25.pt
+# link: https://www.dropbox.com/s/2qsp7pt6t7uo71w/cifar_l2_0_25.pt?dl=0
+# ResNet ($\delta_2=0.5$, Madry pertained) model: cifar_l2_0_5.pt
+# link: https://www.dropbox.com/s/1zazwjfzee7c8i4/cifar_l2_0_5.pt?dl=0
 if use_cuda:
-    MODEL = "model.pkl"
+    MODEL = "cifar_nat.pt"
 else:
-    MODEL = "model.pkl"
+    MODEL = "cifar_nat.pt"
 
 ####################################
 # load model
 ####################################
 
 # Set the model 
-model = vgg.vgg19()
-
-if os.path.isfile(MODEL):
-    print("=> loading model '{}'".format(MODEL))
-    if use_cuda:
-        model = torch.load(MODEL)['net']
-        model.to(device)
-    else:
-        model = torch.load(MODEL, map_location=device)['net']
-    print('model loaded')
-else:
-	print("=> no checkpoint found at '{}'".format(MODEL))
+ds = CIFAR('/path/to/cifar')
+model, _ = make_and_restore_model(arch='resnet50', dataset=ds,
+             resume_path=MODEL)
+model.eval()
 
 ####################################
 # load data
@@ -119,7 +121,7 @@ adversary_FGSM = LBFGSAttack(model, num_classes = len(classes), batch_size=1, bi
 
 
 # Set the type of attack
-adversary = adversary_PGD
+adversary = adversary_Jacobian
 
 ####################################
 #Perform untargeted attack

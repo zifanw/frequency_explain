@@ -19,8 +19,10 @@ The simple-black-box-attack is copied from https://github.com/cg563/simple-black
 To run the simple-black-box-attack, some additional files are need, which can be download using the link: . After downloading the .tar file, simply unzip it.
 
 Robustness package is need to conduct the simple-black-box-attack, which can be installed by:
+
 `pip install robustness`
 
 The command to run the attack on cifar10 is:
+
 `python run_simba.py --data_root cifar10 --num_runs 10000 --num_iters 10000 --pixel_attack  --freq_dims 32`
 Change --num_runs to attack different number of images.

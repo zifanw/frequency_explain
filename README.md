@@ -14,3 +14,13 @@ To get access of the robust data, please use this link: https://drive.google.com
 | Model Three         | ResNet ($\delta_2=0.5$, Madry pertained )    |                |          PGD          |
 | Model Four          | ResNet ($\delta_\infin=8$, Madry pertained ) |                |          PGD          |
 
+
+The simple-black-box-attack is copied from https://github.com/cg563/simple-blackbox-attack, with some modification to adapt the CIFAR-10 dataset.
+To run the simple-black-box-attack, some additional files are need, which can be download using the link: . After downloading the .tar file, simply unzip it.
+
+Robustness package is need to conduct the simple-black-box-attack, which can be installed by:
+`pip install robustness`
+
+The command to run the attack on cifar10 is:
+`python run_simba.py --data_root cifar10 --num_runs 10000 --num_iters 10000 --pixel_attack  --freq_dims 32`
+Change --num_runs to attack different number of images.

@@ -16,7 +16,7 @@ To get access of the robust data, please use this link: https://drive.google.com
 
 
 The simple-black-box-attack is copied from https://github.com/cg563/simple-blackbox-attack, with some modifications to adapt the CIFAR-10 dataset.
-To run the simple-black-box-attack, some additional files are required, which can be download drom: . Simply unzip the downloaded .tar file before running.
+To run the simple-black-box-attack, some additional files are required, which can be download from: . Simply unzip the downloaded .tar file before running.
 
 Robustness package is need to conduct the simple-black-box-attack, which can be installed by:
 

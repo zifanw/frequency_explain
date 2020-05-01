@@ -15,7 +15,7 @@ To get access of the robust data, please use this link: https://drive.google.com
 | Model Four          | ResNet ($\delta_\infin=8$, Madry pertained ) |                |          PGD          |
 
 
-The simple-black-box-attack is copied from https://github.com/cg563/simple-blackbox-attack, with some modification to adapt the CIFAR-10 dataset.
+The simple-black-box-attack is copied from https://github.com/cg563/simple-blackbox-attack, with some modifications to adapt the CIFAR-10 dataset.
 To run the simple-black-box-attack, some additional files are need, which can be download using the link: . After downloading the .tar file, simply unzip it.
 
 Robustness package is need to conduct the simple-black-box-attack, which can be installed by:

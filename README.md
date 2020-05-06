@@ -11,7 +11,7 @@ To get the simple black box attacked images, please refer to: https://drive.goog
 
 | Architecture \ Task | Attribution                                  | Robust Dataset | Adversarial Attack |
 | ------------------- | -------------------------------------------- | -------------- | ------------------ |
-| Model One           | ResNet (pytorch pertained)                   |  cifar_test_non_robust              |   NA                 |
+| Model One           | ResNet (Madry pertained)                   |  cifar_test_non_robust              |   NA                 |
 | Model Two           | ResNet ($\delta_2=0.25$, Madry pertained )   |  cifar_test_robust              |       PGD             |
 | Model Three         | ResNet ($\delta_2=0.5$, Madry pertained )    |                |          PGD          |
 | Model Four          | ResNet ($\delta_\infin=8$, Madry pertained ) |                |          PGD          |

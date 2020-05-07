@@ -184,7 +184,7 @@ dataset = dataset_function(DATA_PATH_DICT[DATA])
 model_kwargs = {
     'arch': 'resnet50',
     'dataset': dataset,
-    'resume_path': f'./models/cifar_std.pt'
+    'resume_path': './cifar_nat.pt'
 }
 
 model, _ = model_utils.make_and_restore_model(**model_kwargs)
@@ -198,6 +198,16 @@ if args.model.startswith('inception'):
 else:
     image_size = 32
     testset = dset.ImageFolder(args.data_root + '/test', utils.CIFAR_TRANSFORM)
+
+trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
+										download=True, transform=utils.CIFAR_TRANSFORM)
+
+testset = torchvision.datasets.CIFAR10(root='./data', train=False,
+									   download=True, transform=utils.CIFAR_TRANSFORM)
+
+classes = ('plane', 'car', 'bird', 'cat',
+		   'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
+
 
 
 # load sampled images or sample new ones

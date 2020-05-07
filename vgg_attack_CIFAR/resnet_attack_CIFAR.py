@@ -66,6 +66,7 @@ else:
 ds = CIFAR('/path/to/cifar')
 model, _ = make_and_restore_model(arch='resnet50', dataset=ds,
              resume_path=MODEL)
+model.cuda()
 model.eval()
 
 ####################################
